@@ -1,0 +1,134 @@
+graph TB
+    subgraph "Application Layer"
+        WEB_UI[Web Interface<br/>React.js Dashboard]
+        MOBILE_APP[Mobile App<br/>React Native]
+        API[REST API<br/>FastAPI/Python]
+        CLI[Command Line Interface<br/>Python CLI]
+    end
+    
+    subgraph "Business Logic Layer"
+        ROBOT_CONTROL[Robot Control<br/>ROS 2 Nodes]
+        AI_PROCESSING[AI Processing<br/>Isaac GR00T]
+        DATA_MANAGEMENT[Data Management<br/>NFS 4.2 + Hammerspace]
+        SCADA_INTEGRATION[SCADA Integration<br/>OPC UA + MQTT]
+    end
+    
+    subgraph "Middleware Layer"
+        ROS2_DDS[ROS 2 DDS<br/>Distributed Communication]
+        MQTT_BROKER[MQTT Broker<br/>HiveMQ]
+        MESSAGE_QUEUE[Message Queue<br/>Apache Kafka]
+        CACHE[Cache Layer<br/>Redis]
+    end
+    
+    subgraph "Data Layer"
+        TIME_SERIES[Time Series DB<br/>InfluxDB]
+        RELATIONAL[Relational DB<br/>PostgreSQL]
+        FILE_STORAGE[File Storage<br/>NFS 4.2]
+        OBJECT_STORAGE[Object Storage<br/>MinIO/S3]
+    end
+    
+    subgraph "Infrastructure Layer"
+        CONTAINER[Container Runtime<br/>Docker]
+        ORCHESTRATION[Orchestration<br/>Kubernetes]
+        SERVICE_MESH[Service Mesh<br/>Istio]
+        MONITORING[Monitoring<br/>Prometheus + Grafana]
+    end
+    
+    subgraph "Operating System Layer"
+        LINUX[Linux Kernel<br/>Ubuntu 22.04 LTS]
+        DRIVERS[Hardware Drivers<br/>ESP32, RPi, NVIDIA]
+        NETWORK[Network Stack<br/>TCP/IP, 5G, Wi-Fi 6]
+    end
+    
+    subgraph "Hardware Layer"
+        CPU[CPU<br/>x86_64, ARM64]
+        GPU[GPU<br/>NVIDIA CUDA]
+        MEMORY[Memory<br/>RAM, NVMe SSD]
+        NETWORK_HW[Network Hardware<br/>Ethernet, 5G, Wi-Fi]
+    end
+    
+    subgraph "Development Tools"
+        IDE[IDE<br/>VS Code, PyCharm]
+        VERSION_CONTROL[Version Control<br/>Git, GitHub]
+        CI_CD[CI/CD<br/>GitHub Actions]
+        TESTING[Testing<br/>pytest, Jest]
+    end
+    
+    subgraph "Security Layer"
+        AUTHENTICATION[Authentication<br/>OAuth 2.0, JWT]
+        AUTHORIZATION[Authorization<br/>RBAC, ABAC]
+        ENCRYPTION[Encryption<br/>TLS, AES-256]
+        AUDIT[Audit Logging<br/>ELK Stack]
+    end
+    
+    %% Application to Business Logic
+    WEB_UI --> ROBOT_CONTROL
+    WEB_UI --> AI_PROCESSING
+    WEB_UI --> DATA_MANAGEMENT
+    WEB_UI --> SCADA_INTEGRATION
+    
+    MOBILE_APP --> API
+    API --> ROBOT_CONTROL
+    API --> AI_PROCESSING
+    API --> DATA_MANAGEMENT
+    
+    CLI --> ROBOT_CONTROL
+    CLI --> DATA_MANAGEMENT
+    
+    %% Business Logic to Middleware
+    ROBOT_CONTROL --> ROS2_DDS
+    AI_PROCESSING --> MESSAGE_QUEUE
+    DATA_MANAGEMENT --> MQTT_BROKER
+    SCADA_INTEGRATION --> MQTT_BROKER
+    
+    %% Middleware to Data
+    ROS2_DDS --> TIME_SERIES
+    MQTT_BROKER --> TIME_SERIES
+    MESSAGE_QUEUE --> RELATIONAL
+    CACHE --> FILE_STORAGE
+    
+    %% Infrastructure connections
+    CONTAINER --> ORCHESTRATION
+    ORCHESTRATION --> SERVICE_MESH
+    SERVICE_MESH --> MONITORING
+    
+    %% OS and Hardware
+    LINUX --> CPU
+    LINUX --> GPU
+    LINUX --> MEMORY
+    LINUX --> NETWORK_HW
+    
+    DRIVERS --> LINUX
+    NETWORK --> LINUX
+    
+    %% Security integration
+    AUTHENTICATION --> API
+    AUTHORIZATION --> ROBOT_CONTROL
+    ENCRYPTION --> NETWORK
+    AUDIT --> TIME_SERIES
+    
+    %% Development tools
+    IDE --> VERSION_CONTROL
+    VERSION_CONTROL --> CI_CD
+    CI_CD --> TESTING
+    
+    %% Styling
+    classDef application fill:#3B82F6,stroke:#1D4ED8,stroke-width:2px,color:#fff
+    classDef business fill:#10B981,stroke:#059669,stroke-width:2px,color:#fff
+    classDef middleware fill:#F59E0B,stroke:#D97706,stroke-width:2px,color:#000
+    classDef data fill:#8B5CF6,stroke:#7C3AED,stroke-width:2px,color:#fff
+    classDef infrastructure fill:#EC4899,stroke:#DB2777,stroke-width:2px,color:#fff
+    classDef os fill:#6B7280,stroke:#4B5563,stroke-width:2px,color:#fff
+    classDef hardware fill:#EF4444,stroke:#DC2626,stroke-width:2px,color:#fff
+    classDef dev fill:#84CC16,stroke:#65A30D,stroke-width:2px,color:#000
+    classDef security fill:#F97316,stroke:#EA580C,stroke-width:2px,color:#fff
+    
+    class WEB_UI,MOBILE_APP,API,CLI application
+    class ROBOT_CONTROL,AI_PROCESSING,DATA_MANAGEMENT,SCADA_INTEGRATION business
+    class ROS2_DDS,MQTT_BROKER,MESSAGE_QUEUE,CACHE middleware
+    class TIME_SERIES,RELATIONAL,FILE_STORAGE,OBJECT_STORAGE data
+    class CONTAINER,ORCHESTRATION,SERVICE_MESH,MONITORING infrastructure
+    class LINUX,DRIVERS,NETWORK os
+    class CPU,GPU,MEMORY,NETWORK_HW hardware
+    class IDE,VERSION_CONTROL,CI_CD,TESTING dev
+    class AUTHENTICATION,AUTHORIZATION,ENCRYPTION,AUDIT security

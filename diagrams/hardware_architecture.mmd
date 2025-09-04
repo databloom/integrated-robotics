@@ -1,0 +1,165 @@
+graph TB
+    subgraph "Aerial Drone Hardware"
+        subgraph "Flight Controller"
+            ESP32_A[ESP32-S3-WROOM-1<br/>Dual-core, Wi-Fi/BLE<br/>Real-time Control]
+        end
+        
+        subgraph "Compute Module"
+            RPI_CM4[Raspberry Pi CM4<br/>2GB RAM, 16GB eMMC<br/>AI Processing]
+        end
+        
+        subgraph "Sensors"
+            LIDAR_A[Velodyne Puck LITE<br/>360° LIDAR]
+            CAM_A[Intel RealSense D455<br/>Depth Camera]
+            IMU_A[MPU-6050<br/>6-Axis IMU]
+            GPS_A[NEO-6M<br/>GPS Module]
+        end
+        
+        subgraph "Actuators"
+            MOTORS_A[4x T-Motor MN3515<br/>400KV Brushless Motors]
+            ESCs_A[4x 30A ESCs<br/>Motor Control]
+            PROPS_A[4x 1045 Props<br/>Carbon Fiber]
+        end
+        
+        subgraph "Power & Communication"
+            BAT_A[6S 10,000mAh LiPo<br/>35min Flight Time]
+            RADIO_A[915MHz Telemetry<br/>500mW Radio]
+        end
+    end
+    
+    subgraph "Ground Crawler Hardware"
+        subgraph "Main Controller"
+            ESP32_G[ESP32-S3-WROOM-1<br/>Motor Control]
+        end
+        
+        subgraph "Compute Module"
+            RPI_ZERO[Raspberry Pi Zero 2W<br/>1GB RAM<br/>Sensor Fusion]
+        end
+        
+        subgraph "Sensors"
+            LIDAR_G[RPLIDAR A1M8<br/>2D LIDAR]
+            CAM_G[Raspberry Pi Camera V2<br/>4K Video]
+            ULTRASONIC[4x HC-SR04<br/>Ultrasonic Sensors]
+            IMU_G[MPU-6050<br/>6-Axis IMU]
+        end
+        
+        subgraph "Mobility"
+            WHEELS[4x Mecanum Wheels<br/>Omnidirectional]
+            GEAR_MOTORS[4x 12V 200RPM<br/>Gear Motors]
+            MOTOR_DRIVERS[2x L298N<br/>H-Bridge Drivers]
+        end
+        
+        subgraph "Manipulation"
+            ARM[6DOF Robotic Arm<br/>UFactory xArm 6]
+            THERMAL[FLIR Lepton 3.5<br/>Thermal Camera]
+        end
+    end
+    
+    subgraph "Submarine Drone Hardware"
+        subgraph "Main Controller"
+            ESP32_S[ESP32-S3-WROOM-1<br/>Waterproof Enclosure]
+        end
+        
+        subgraph "Compute Module"
+            RPI_4[Raspberry Pi 4<br/>4GB RAM, Industrial<br/>High Performance]
+        end
+        
+        subgraph "Pressure Vessel"
+            HOUSING[100m Depth Rated<br/>Acrylic Tube]
+            FOAM[Syntactic Foam<br/>Buoyancy Control]
+        end
+        
+        subgraph "Propulsion"
+            THRUSTERS[6x T200 Thrusters<br/>Blue Robotics]
+            THRUSTER_ESCS[6x 30A ESCs<br/>Thruster Control]
+        end
+        
+        subgraph "Navigation"
+            DVL[Water Linked DVL A50<br/>Doppler Velocity Log]
+            SONAR[Blueprint Oculus M750d<br/>Imaging Sonar]
+            DEPTH[MS5837-30BA<br/>Depth Sensor]
+            IMU_S[BNO085<br/>9-DOF IMU]
+        end
+        
+        subgraph "Communication"
+            TETHER[100m Neutrally Buoyant<br/>Ethernet Tether]
+            ACOUSTIC_MODEM[Water Linked M64<br/>Acoustic Modem]
+            SURFACE_BUOY[Wi-Fi/4G Gateway<br/>Surface Buoy]
+        end
+    end
+    
+    subgraph "SCADA Hardware"
+        subgraph "Central Server"
+            DELL_SERVER[Dell PowerEdge R350<br/>8-core, 32GB RAM]
+            CISCO_SWITCH[Cisco Catalyst 1000<br/>24-port Switch]
+            APC_UPS[APC 1500VA UPS<br/>Power Backup]
+        end
+        
+        subgraph "Field Components"
+            SIEMENS_PLC[Siemens S7-1200<br/>Programmable Logic Controller]
+            WEINTEK_HMI[Weintek MT8071iE<br/>Human Machine Interface]
+            MOXA_RTU[2x Moxa ioLogik 2542<br/>Remote Terminal Units]
+        end
+        
+        subgraph "Software"
+            IGNITION[Ignition Edge<br/>SCADA Platform]
+            HIVEMQ[HiveMQ<br/>MQTT Broker]
+            INFLUXDB[InfluxDB<br/>Time Series Database]
+        end
+    end
+    
+    %% Connections
+    ESP32_A --> RPI_CM4
+    RPI_CM4 --> LIDAR_A
+    RPI_CM4 --> CAM_A
+    RPI_CM4 --> IMU_A
+    RPI_CM4 --> GPS_A
+    ESP32_A --> MOTORS_A
+    ESP32_A --> ESCs_A
+    BAT_A --> ESP32_A
+    BAT_A --> RPI_CM4
+    
+    ESP32_G --> RPI_ZERO
+    RPI_ZERO --> LIDAR_G
+    RPI_ZERO --> CAM_G
+    RPI_ZERO --> ULTRASONIC
+    RPI_ZERO --> IMU_G
+    ESP32_G --> GEAR_MOTORS
+    ESP32_G --> MOTOR_DRIVERS
+    RPI_ZERO --> ARM
+    RPI_ZERO --> THERMAL
+    
+    ESP32_S --> RPI_4
+    RPI_4 --> DVL
+    RPI_4 --> SONAR
+    RPI_4 --> DEPTH
+    RPI_4 --> IMU_S
+    ESP32_S --> THRUSTERS
+    ESP32_S --> THRUSTER_ESCS
+    RPI_4 --> TETHER
+    RPI_4 --> ACOUSTIC_MODEM
+    RPI_4 --> SURFACE_BUOY
+    
+    DELL_SERVER --> CISCO_SWITCH
+    CISCO_SWITCH --> SIEMENS_PLC
+    CISCO_SWITCH --> WEINTEK_HMI
+    CISCO_SWITCH --> MOXA_RTU
+    DELL_SERVER --> IGNITION
+    DELL_SERVER --> HIVEMQ
+    DELL_SERVER --> INFLUXDB
+    
+    %% Styling
+    classDef controller fill:#3B82F6,stroke:#1D4ED8,stroke-width:2px,color:#fff
+    classDef compute fill:#10B981,stroke:#059669,stroke-width:2px,color:#fff
+    classDef sensor fill:#F59E0B,stroke:#D97706,stroke-width:2px,color:#000
+    classDef actuator fill:#8B5CF6,stroke:#7C3AED,stroke-width:2px,color:#fff
+    classDef power fill:#EC4899,stroke:#DB2777,stroke-width:2px,color:#fff
+    classDef comm fill:#6B7280,stroke:#4B5563,stroke-width:2px,color:#fff
+    classDef scada fill:#EF4444,stroke:#DC2626,stroke-width:2px,color:#fff
+    
+    class ESP32_A,ESP32_G,ESP32_S controller
+    class RPI_CM4,RPI_ZERO,RPI_4 compute
+    class LIDAR_A,CAM_A,IMU_A,GPS_A,LIDAR_G,CAM_G,ULTRASONIC,IMU_G,DVL,SONAR,DEPTH,IMU_S sensor
+    class MOTORS_A,ESCs_A,PROPS_A,WHEELS,GEAR_MOTORS,MOTOR_DRIVERS,ARM,THERMAL,THRUSTERS,THRUSTER_ESCS actuator
+    class BAT_A,RADIO_A,HOUSING,FOAM,TETHER,ACOUSTIC_MODEM,SURFACE_BUOY power
+    class DELL_SERVER,CISCO_SWITCH,APC_UPS,SIEMENS_PLC,WEINTEK_HMI,MOXA_RTU,IGNITION,HIVEMQ,INFLUXDB scada

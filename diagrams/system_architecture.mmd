@@ -1,0 +1,110 @@
+graph TB
+    subgraph "Central Command Center"
+        DT[Digital Twin<br/>NVIDIA Omniverse]
+        AI[AI/ML Engine<br/>Isaac GR00T]
+        SCADA[SCADA Control<br/>Ignition Edge]
+    end
+    
+    subgraph "Data Fabric"
+        HS[Hammerspace<br/>Anvil Server]
+        NFS[NFS 4.2<br/>Storage]
+        MCP[MCP Network<br/>P2P Sharing]
+    end
+    
+    subgraph "Edge Computing"
+        EDGE1[Edge Server 1<br/>NVIDIA IGX Orin]
+        EDGE2[Edge Server 2<br/>NVIDIA IGX Orin]
+        EDGE3[Edge Server 3<br/>NVIDIA IGX Orin]
+    end
+    
+    subgraph "Robotic Fleet"
+        subgraph "Aerial Drones"
+            DRONE1[Drone 1<br/>ESP32-S3 + RPi CM4]
+            DRONE2[Drone 2<br/>ESP32-S3 + RPi CM4]
+            DRONE3[Drone 3<br/>ESP32-S3 + RPi CM4]
+        end
+        
+        subgraph "Ground Crawlers"
+            CRAWLER1[Crawler 1<br/>ESP32-S3 + RPi Zero 2W]
+            CRAWLER2[Crawler 2<br/>ESP32-S3 + RPi Zero 2W]
+            CRAWLER3[Crawler 3<br/>ESP32-S3 + RPi Zero 2W]
+        end
+        
+        subgraph "Submarine Drones"
+            ROV1[ROV 1<br/>ESP32-S3 + RPi 4]
+        end
+    end
+    
+    subgraph "Network Infrastructure"
+        NET1[5G Private Network]
+        NET2[Wi-Fi 6]
+        NET3[Fiber Optic Backbone]
+        NET4[Acoustic Modem]
+    end
+    
+    subgraph "Factory IoT"
+        SENSORS[Environmental Sensors]
+        CAMERAS[AI Cameras]
+        LIDAR[LIDAR Sensors]
+        PLC[PLC Systems]
+    end
+    
+    %% Central connections
+    DT --> HS
+    AI --> HS
+    SCADA --> HS
+    
+    %% Data fabric connections
+    HS --> NFS
+    HS --> MCP
+    NFS --> MCP
+    
+    %% Edge connections
+    HS --> EDGE1
+    HS --> EDGE2
+    HS --> EDGE3
+    
+    %% Robot connections
+    EDGE1 --> DRONE1
+    EDGE1 --> DRONE2
+    EDGE2 --> DRONE3
+    EDGE2 --> CRAWLER1
+    EDGE3 --> CRAWLER2
+    EDGE3 --> CRAWLER3
+    EDGE1 --> ROV1
+    
+    %% Network connections
+    DRONE1 --> NET1
+    DRONE2 --> NET1
+    DRONE3 --> NET1
+    CRAWLER1 --> NET2
+    CRAWLER2 --> NET2
+    CRAWLER3 --> NET2
+    ROV1 --> NET4
+    
+    %% Factory IoT connections
+    SENSORS --> NET2
+    CAMERAS --> NET2
+    LIDAR --> NET2
+    PLC --> NET3
+    
+    %% Network backbone
+    NET1 --> NET3
+    NET2 --> NET3
+    NET4 --> NET3
+    NET3 --> HS
+    
+    %% Styling
+    classDef central fill:#2563EB,stroke:#1E40AF,stroke-width:2px,color:#fff
+    classDef data fill:#10B981,stroke:#0D8F6A,stroke-width:2px,color:#fff
+    classDef edge fill:#8B5CF6,stroke:#7C3AED,stroke-width:2px,color:#fff
+    classDef robot fill:#F59E0B,stroke:#D97706,stroke-width:2px,color:#000
+    classDef network fill:#EC4899,stroke:#DB2777,stroke-width:2px,color:#fff
+    classDef iot fill:#6B7280,stroke:#4B5563,stroke-width:2px,color:#fff
+    
+    class DT,AI,SCADA central
+    class HS,NFS,MCP data
+    class EDGE1,EDGE2,EDGE3 edge
+    class DRONE1,DRONE2,DRONE3,CRAWLER1,CRAWLER2,CRAWLER3,ROV1 robot
+    class NET1,NET2,NET3,NET4 network
+    class SENSORS,CAMERAS,LIDAR,PLC iot

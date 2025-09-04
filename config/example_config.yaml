@@ -1,0 +1,479 @@
+# Isaac-Nexus System Configuration
+# Copy this file to system_config.yaml and modify as needed
+
+# System-wide configuration
+system:
+  name: "Isaac-Nexus Platform"
+  version: "1.0.0"
+  environment: "production"  # development, staging, production
+  log_level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+
+# Network configuration
+network:
+  domain: "isaac-nexus.local"
+  dns_servers:
+    - "8.8.8.8"
+    - "8.8.4.4"
+  
+  # 5G Network
+  cellular:
+    enabled: true
+    provider: "verizon"
+    apn: "vzwinternet"
+    
+  # Wi-Fi 6 Network
+  wifi:
+    enabled: true
+    ssid: "Isaac-Nexus-5G"
+    password: "secure_password_123"
+    frequency: "5GHz"
+    
+  # Ethernet
+  ethernet:
+    enabled: true
+    interface: "eth0"
+    ip_address: "192.168.1.100"
+    subnet_mask: "255.255.255.0"
+    gateway: "192.168.1.1"
+
+# ROS 2 configuration
+ros2:
+  domain_id: 0
+  middleware: "rmw_fastrtps_cpp"
+  
+  # Node configuration
+  nodes:
+    robot_control:
+      enabled: true
+      namespace: "/isaac_nexus"
+      parameters:
+        control_frequency: 50.0
+        safety_timeout: 5.0
+        
+    sensor_drivers:
+      enabled: true
+      namespace: "/isaac_nexus/sensors"
+      parameters:
+        publish_rate: 30.0
+        
+    ai_processing:
+      enabled: true
+      namespace: "/isaac_nexus/ai"
+      parameters:
+        model_path: "~/isaac_groot_models"
+        confidence_threshold: 0.5
+
+# NVIDIA Isaac GR00T configuration
+isaac_groot:
+  enabled: true
+  model_path: "~/isaac_groot_models"
+  device: "cuda"  # cuda, cpu
+  
+  # Perception models
+  perception:
+    object_detection:
+      model: "yolov8n.pt"
+      confidence_threshold: 0.5
+      nms_threshold: 0.4
+      
+    depth_estimation:
+      model: "midas_v21_small_256.pt"
+      input_size: [256, 256]
+      
+    segmentation:
+      model: "sam_vit_b_01ec64.pth"
+      
+  # Planning configuration
+  planning:
+    path_planning:
+      algorithm: "a_star"
+      grid_resolution: 0.1
+      safety_margin: 0.5
+      
+    obstacle_avoidance:
+      enabled: true
+      reaction_distance: 2.0
+      
+  # Control configuration
+  control:
+    pid_controller:
+      kp: 1.0
+      ki: 0.1
+      kd: 0.05
+      
+    velocity_limits:
+      linear: 1.0
+      angular: 1.0
+
+# NFS 4.2 configuration
+nfs42:
+  enabled: true
+  server: "192.168.1.100"
+  mount_point: "/mnt/isaac_nexus"
+  version: "4.2"
+  
+  # Tagging configuration
+  tagging:
+    enabled: true
+    tag_file: "/mnt/isaac_nexus/.tags"
+    
+  # Streaming configuration
+  streaming:
+    enabled: true
+    buffer_size: 1048576  # 1MB
+    compression: "lz4"
+    encryption: "AES-256"
+    
+  # Replication configuration
+  replication:
+    enabled: true
+    replica_servers:
+      - "192.168.1.101"
+      - "192.168.1.102"
+    replication_factor: 3
+
+# Hammerspace configuration
+hammerspace:
+  enabled: true
+  anvil_server: "192.168.1.100"
+  anvil_port: 8080
+  admin_username: "admin"
+  admin_password: "admin123"
+  
+  # Data movement policies
+  policies:
+    hot_data:
+      conditions:
+        - field: "access_time"
+          operator: "within"
+          value: "24h"
+        - field: "access_count"
+          operator: ">"
+          value: 10
+      actions:
+        - type: "move"
+          target: "local_nvme"
+          priority: "high"
+          
+    warm_data:
+      conditions:
+        - field: "access_time"
+          operator: "within"
+          value: "7d"
+        - field: "access_count"
+          operator: ">"
+          value: 3
+      actions:
+        - type: "move"
+          target: "regional_storage"
+          priority: "medium"
+          
+    cold_data:
+      conditions:
+        - field: "access_time"
+          operator: "older_than"
+          value: "30d"
+        - field: "access_count"
+          operator: "<"
+          value: 2
+      actions:
+        - type: "move"
+          target: "central_archive"
+          priority: "low"
+
+# MCP (Multi-Cloud Protocol) configuration
+mcp:
+  enabled: true
+  node_id: "node_001"
+  
+  # Network configuration
+  network:
+    bootstrap_nodes:
+      - "192.168.1.100:8000"
+      - "192.168.1.101:8000"
+    listen_port: 8000
+    max_peers: 50
+    
+  # Data store configuration
+  data_store:
+    path: "/mnt/mcp_data"
+    max_size: "100GB"
+    replication_factor: 3
+    
+  # Consensus configuration
+  consensus:
+    algorithm: "raft"
+    election_timeout: "150ms"
+    heartbeat_interval: "50ms"
+    
+  # Security configuration
+  security:
+    encryption: "AES-256"
+    key_exchange: "ECDH"
+    authentication: "RSA-2048"
+
+# MQTT configuration
+mqtt:
+  enabled: true
+  broker: "192.168.1.100"
+  port: 1883
+  username: "isaac_nexus"
+  password: "password123"
+  
+  # Topics
+  topics:
+    robot_telemetry: "/isaac_nexus/telemetry/+"
+    robot_commands: "/isaac_nexus/commands/+"
+    system_status: "/isaac_nexus/status/+"
+    
+  # Quality of Service
+  qos:
+    telemetry: 1
+    commands: 2
+    status: 0
+
+# SCADA configuration
+scada:
+  enabled: true
+  
+  # Ignition Edge
+  ignition:
+    host: "localhost"
+    port: 8088
+    username: "admin"
+    password: "admin123"
+    
+  # OPC UA Server
+  opcua:
+    enabled: true
+    endpoint: "opc.tcp://0.0.0.0:4840"
+    server_name: "Isaac-Nexus OPC UA Server"
+    
+  # PLC Integration
+  plc:
+    enabled: true
+    type: "siemens_s7"
+    ip_address: "192.168.1.200"
+    rack: 0
+    slot: 1
+
+# Video processing configuration
+video_processing:
+  enabled: true
+  
+  # Input sources
+  input:
+    sources:
+      - type: "rtsp"
+        url: "rtsp://192.168.1.100:554/stream1"
+        resolution: "1920x1080"
+        fps: 30
+      - type: "usb_camera"
+        device: "/dev/video0"
+        resolution: "1280x720"
+        fps: 30
+        
+  # Processing configuration
+  processing:
+    object_detection:
+      enabled: true
+      model: "yolov8n.pt"
+      confidence_threshold: 0.5
+      nms_threshold: 0.4
+      
+    compression:
+      algorithm: "h264"
+      bitrate: "2M"
+      quality: "medium"
+      
+    streaming:
+      protocol: "rtsp"
+      port: 8554
+      quality_levels: ["high", "medium", "low"]
+      
+  # Output configuration
+  output:
+    storage:
+      path: "/mnt/video_storage"
+      format: "mp4"
+      retention_days: 30
+      
+    streaming:
+      enabled: true
+      endpoints:
+        - "rtsp://192.168.1.100:8554/stream1"
+        - "http://192.168.1.100:8080/stream1"
+
+# Robot-specific configurations
+robots:
+  aerial_drones:
+    count: 3
+    default_config:
+      type: "aerial_drone"
+      flight_time: 35  # minutes
+      payload_capacity: 2.5  # kg
+      max_speed: 15  # m/s
+      sensors:
+        lidar: true
+        camera: true
+        imu: true
+        gps: true
+        
+  ground_crawlers:
+    count: 3
+    default_config:
+      type: "ground_crawler"
+      endurance: 8  # hours
+      payload_capacity: 20  # kg
+      max_speed: 1.5  # m/s
+      sensors:
+        lidar: true
+        camera: true
+        ultrasonic: true
+        imu: true
+        
+  submarine_drones:
+    count: 1
+    default_config:
+      type: "submarine_drone"
+      depth_rating: 100  # meters
+      payload_capacity: 5  # kg
+      max_speed: 2  # m/s
+      sensors:
+        dvl: true
+        sonar: true
+        depth: true
+        camera: true
+
+# Security configuration
+security:
+  # Authentication
+  authentication:
+    enabled: true
+    method: "oauth2"
+    jwt_secret: "your_jwt_secret_here"
+    token_expiry: 3600  # seconds
+    
+  # Authorization
+  authorization:
+    enabled: true
+    method: "rbac"
+    roles:
+      - name: "admin"
+        permissions: ["*"]
+      - name: "operator"
+        permissions: ["read", "control"]
+      - name: "viewer"
+        permissions: ["read"]
+        
+  # Encryption
+  encryption:
+    enabled: true
+    algorithm: "AES-256"
+    key_rotation: 86400  # seconds
+    
+  # Network security
+  network_security:
+    enabled: true
+    firewall:
+      enabled: true
+      rules:
+        - action: "allow"
+          source: "192.168.1.0/24"
+          destination: "any"
+          port: "any"
+        - action: "deny"
+          source: "any"
+          destination: "any"
+          port: "any"
+
+# Monitoring and logging
+monitoring:
+  enabled: true
+  
+  # Metrics collection
+  metrics:
+    enabled: true
+    prometheus:
+      enabled: true
+      port: 9090
+      
+    grafana:
+      enabled: true
+      port: 3000
+      username: "admin"
+      password: "admin123"
+      
+  # Logging
+  logging:
+    enabled: true
+    level: "INFO"
+    format: "json"
+    destinations:
+      - type: "file"
+        path: "/var/log/isaac_nexus"
+        max_size: "100MB"
+        backup_count: 10
+      - type: "syslog"
+        host: "192.168.1.100"
+        port: 514
+        
+  # Health checks
+  health_checks:
+    enabled: true
+    interval: 30  # seconds
+    endpoints:
+      - name: "ros2_bridge"
+        url: "http://localhost:8080/health"
+      - name: "mqtt_broker"
+        url: "http://localhost:1883/health"
+      - name: "nfs_server"
+        url: "http://192.168.1.100:2049/health"
+
+# Backup and recovery
+backup:
+  enabled: true
+  
+  # Configuration backup
+  config_backup:
+    enabled: true
+    schedule: "0 2 * * *"  # Daily at 2 AM
+    retention_days: 30
+    
+  # Data backup
+  data_backup:
+    enabled: true
+    schedule: "0 3 * * *"  # Daily at 3 AM
+    retention_days: 90
+    compression: true
+    
+  # System backup
+  system_backup:
+    enabled: true
+    schedule: "0 4 * * 0"  # Weekly on Sunday at 4 AM
+    retention_weeks: 12
+
+# Performance tuning
+performance:
+  # CPU optimization
+  cpu:
+    governor: "performance"
+    scaling_max_freq: "3000000"  # 3GHz
+    
+  # Memory optimization
+  memory:
+    swappiness: 10
+    dirty_ratio: 15
+    dirty_background_ratio: 5
+    
+  # Network optimization
+  network:
+    tcp_congestion_control: "bbr"
+    tcp_window_scaling: true
+    tcp_timestamps: true
+    
+  # Storage optimization
+  storage:
+    read_ahead_kb: 128
+    scheduler: "mq-deadline"
+    nr_requests: 32

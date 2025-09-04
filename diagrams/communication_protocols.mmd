@@ -1,0 +1,90 @@
+graph TB
+    subgraph "Application Layer"
+        ROS2[ROS 2 DDS<br/>Robot Control & Coordination]
+        MQTT[MQTT<br/>Telemetry & Commands]
+        HTTP[HTTP/HTTPS<br/>Web Interface & APIs]
+        RTSP[RTSP<br/>Video Streaming]
+    end
+    
+    subgraph "Transport Layer"
+        TCP[TCP<br/>Reliable Data Transfer]
+        UDP[UDP<br/>Real-time Data]
+        WEBSOCKET[WebSocket<br/>Bidirectional Communication]
+    end
+    
+    subgraph "Network Layer"
+        IP[IPv4/IPv6<br/>Internet Protocol]
+        MESH[Mesh Networking<br/>Ad-hoc Robot Networks]
+    end
+    
+    subgraph "Data Link Layer"
+        WIFI[Wi-Fi 6<br/>High-speed Local]
+        CELLULAR[5G/4G<br/>Wide Area Network]
+        ETHERNET[Ethernet<br/>Wired Backbone]
+        ACOUSTIC[Acoustic<br/>Underwater Communication]
+    end
+    
+    subgraph "Physical Layer"
+        RF[Radio Frequency<br/>2.4GHz, 5GHz, 915MHz]
+        OPTICAL[Fiber Optic<br/>High Bandwidth]
+        SOUND[Sound Waves<br/>Underwater Propagation]
+    end
+    
+    subgraph "Protocol Stacks"
+        subgraph "Robot Control Stack"
+            RC1[ROS 2 DDS] --> RC2[TCP/UDP]
+            RC2 --> RC3[IP]
+            RC3 --> RC4[Wi-Fi 6]
+            RC4 --> RC5[RF]
+        end
+        
+        subgraph "Video Streaming Stack"
+            VS1[RTSP] --> VS2[TCP]
+            VS2 --> VS3[IP]
+            VS3 --> VS4[Ethernet]
+            VS4 --> VS5[Optical]
+        end
+        
+        subgraph "Underwater Communication Stack"
+            UC1[MCP Protocol] --> UC2[UDP]
+            UC2 --> UC3[IP]
+            UC3 --> UC4[Acoustic Modem]
+            UC4 --> UC5[Sound Waves]
+        end
+        
+        subgraph "SCADA Integration Stack"
+            SI1[MQTT] --> SI2[TCP]
+            SI2 --> SI3[IP]
+            SI3 --> SI4[Ethernet]
+            SI4 --> SI5[Optical]
+        end
+    end
+    
+    subgraph "Quality of Service"
+        QOS1[High Priority<br/>Control Commands<br/>< 50ms Latency]
+        QOS2[Medium Priority<br/>Sensor Data<br/>< 200ms Latency]
+        QOS3[Low Priority<br/>File Transfer<br/>Best Effort]
+    end
+    
+    %% Protocol mappings
+    ROS2 --> QOS1
+    MQTT --> QOS2
+    RTSP --> QOS2
+    HTTP --> QOS3
+    
+    %% Styling
+    classDef app fill:#3B82F6,stroke:#1D4ED8,stroke-width:2px,color:#fff
+    classDef transport fill:#10B981,stroke:#059669,stroke-width:2px,color:#fff
+    classDef network fill:#F59E0B,stroke:#D97706,stroke-width:2px,color:#000
+    classDef datalink fill:#8B5CF6,stroke:#7C3AED,stroke-width:2px,color:#fff
+    classDef physical fill:#EC4899,stroke:#DB2777,stroke-width:2px,color:#fff
+    classDef stack fill:#6B7280,stroke:#4B5563,stroke-width:2px,color:#fff
+    classDef qos fill:#EF4444,stroke:#DC2626,stroke-width:2px,color:#fff
+    
+    class ROS2,MQTT,HTTP,RTSP app
+    class TCP,UDP,WEBSOCKET transport
+    class IP,MESH network
+    class WIFI,CELLULAR,ETHERNET,ACOUSTIC datalink
+    class RF,OPTICAL,SOUND physical
+    class RC1,RC2,RC3,RC4,RC5,VS1,VS2,VS3,VS4,VS5,UC1,UC2,UC3,UC4,UC5,SI1,SI2,SI3,SI4,SI5 stack
+    class QOS1,QOS2,QOS3 qos

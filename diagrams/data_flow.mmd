@@ -1,0 +1,87 @@
+graph LR
+    subgraph "Data Sources"
+        SENSORS[Sensors<br/>LIDAR, Camera, IMU]
+        ROBOTS[Robot Telemetry<br/>Position, Status, Battery]
+        FACTORY[Factory IoT<br/>Environmental, Production]
+    end
+    
+    subgraph "Edge Processing"
+        ESP32[ESP32 Controllers<br/>Real-time Control]
+        RPI[Raspberry Pi<br/>Sensor Fusion]
+        JETSON[Jetson Xavier NX<br/>AI Inference]
+    end
+    
+    subgraph "Data Processing Pipeline"
+        PREPROC[Preprocessing<br/>Filtering, Normalization]
+        AI[AI/ML Processing<br/>Object Detection, Planning]
+        COMPRESS[Compression<br/>H.265, LZ4]
+        TAG[Tagging<br/>Metadata Generation]
+    end
+    
+    subgraph "Storage Layer"
+        LOCAL[Local Cache<br/>NVMe SSD]
+        REGIONAL[Regional Storage<br/>High-speed Network]
+        CENTRAL[Central Archive<br/>Long-term Storage]
+    end
+    
+    subgraph "Data Orchestration"
+        HAMMERSPACE[Hammerspace<br/>Policy Engine]
+        NFS42[NFS 4.2<br/>Tagged Storage]
+        MCP[MCP Network<br/>P2P Sharing]
+    end
+    
+    subgraph "Consumers"
+        SCADA[SCADA System<br/>Monitoring & Control]
+        ANALYTICS[Analytics Engine<br/>Trends & Insights]
+        DIGITAL_TWIN[Digital Twin<br/>Simulation & Planning]
+    end
+    
+    %% Data flow from sources
+    SENSORS --> ESP32
+    ROBOTS --> RPI
+    FACTORY --> RPI
+    
+    %% Edge processing flow
+    ESP32 --> PREPROC
+    RPI --> PREPROC
+    JETSON --> AI
+    
+    %% Processing pipeline
+    PREPROC --> AI
+    AI --> COMPRESS
+    COMPRESS --> TAG
+    
+    %% Storage flow
+    TAG --> LOCAL
+    LOCAL --> REGIONAL
+    REGIONAL --> CENTRAL
+    
+    %% Orchestration
+    TAG --> HAMMERSPACE
+    HAMMERSPACE --> NFS42
+    HAMMERSPACE --> MCP
+    NFS42 --> MCP
+    
+    %% Consumer flow
+    NFS42 --> SCADA
+    NFS42 --> ANALYTICS
+    NFS42 --> DIGITAL_TWIN
+    
+    %% Real-time feedback
+    SCADA --> ESP32
+    DIGITAL_TWIN --> AI
+    
+    %% Styling
+    classDef source fill:#3B82F6,stroke:#1D4ED8,stroke-width:2px,color:#fff
+    classDef edge fill:#10B981,stroke:#059669,stroke-width:2px,color:#fff
+    classDef process fill:#F59E0B,stroke:#D97706,stroke-width:2px,color:#000
+    classDef storage fill:#8B5CF6,stroke:#7C3AED,stroke-width:2px,color:#fff
+    classDef orchestration fill:#EC4899,stroke:#DB2777,stroke-width:2px,color:#fff
+    classDef consumer fill:#6B7280,stroke:#4B5563,stroke-width:2px,color:#fff
+    
+    class SENSORS,ROBOTS,FACTORY source
+    class ESP32,RPI,JETSON edge
+    class PREPROC,AI,COMPRESS,TAG process
+    class LOCAL,REGIONAL,CENTRAL storage
+    class HAMMERSPACE,NFS42,MCP orchestration
+    class SCADA,ANALYTICS,DIGITAL_TWIN consumer
