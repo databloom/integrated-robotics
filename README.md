@@ -9,7 +9,7 @@ Isaac-Nexus is a comprehensive robotics platform that integrates NVIDIA's Isaac 
 - **Unified Robotics Platform**: Aerial drones, ground crawlers, and submarine drones working in concert
 - **AI-Powered Intelligence**: NVIDIA Isaac GR00T foundation models for perception, planning, and control
 - **Advanced Data Fabric**: NFS 4.2 with tagging, streaming, and replication capabilities
-- **Peer-to-Peer Data Sharing**: MCP (Multi-Cloud Protocol) for distributed data management
+- **Agent-Based Fleet Control**: MCP (Model Context Protocol) for tool calling and agent coordination
 - **Intelligent Data Orchestration**: Hammerspace for policy-based data movement
 - **Real-Time Video Processing**: Pseudo-real-time video analysis and streaming
 - **SCADA Integration**: Industrial automation and monitoring capabilities
@@ -107,7 +107,7 @@ isaac-nexus/
 - **NVIDIA Isaac GR00T**: Foundation models for AI/ML
 - **NFS 4.2**: Advanced file system with tagging and streaming
 - **Hammerspace**: Data orchestration and policy management
-- **MCP**: Multi-Cloud Protocol for peer-to-peer data sharing
+- **MCP**: Model Context Protocol for agent-based tool calling and fleet control
 
 ### Communication Protocols
 - **ROS 2 DDS**: Real-time robot communication

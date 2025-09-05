@@ -1,8 +1,9 @@
 graph TB
     subgraph "Central Command Center"
-        DT[Digital Twin<br/>NVIDIA Omniverse]
+        DT[Digital Twin<br/>NVIDIA Omniverse<br/>Factory Simulation]
         AI[AI/ML Engine<br/>Isaac GR00T]
-        SCADA[SCADA Control<br/>Ignition Edge]
+        SCADA[SCADA Control<br/>Ignition Edge<br/>Real-time Monitoring]
+        MCP_SERVER[MCP Server<br/>Tool Registry<br/>Agent Coordination]
     end
     
     subgraph "Data Fabric"
@@ -33,6 +34,11 @@ graph TB
         subgraph "Submarine Drones"
             ROV1[ROV 1<br/>ESP32-S3 + RPi 4]
         end
+        
+        subgraph "SCARA Robots"
+            SCARA1[SCARA 1<br/>FANUC SR-3iA<br/>Assembly]
+            SCARA2[SCARA 2<br/>ABB IRB 910SC<br/>Pick & Place]
+        end
     end
     
     subgraph "Network Infrastructure"
@@ -42,22 +48,41 @@ graph TB
         NET4[Acoustic Modem]
     end
     
-    subgraph "Factory IoT"
-        SENSORS[Environmental Sensors]
-        CAMERAS[AI Cameras]
-        LIDAR[LIDAR Sensors]
-        PLC[PLC Systems]
+    subgraph "Factory IoT & Automation"
+        SENSORS[Environmental Sensors<br/>Temperature, Humidity, Pressure]
+        CAMERAS[AI Cameras<br/>Quality Control]
+        LIDAR[LIDAR Sensors<br/>Navigation & Mapping]
+        PLC[Legacy PLC Systems<br/>Siemens S7, Allen-Bradley]
+        CONVEYORS[Conveyor Systems<br/>Production Lines]
+        TOOLING[Tooling Automation<br/>CNC, Assembly Stations]
+    end
+    
+    subgraph "SCADA Integration"
+        OPCUA[OPC UA Server<br/>Real-time Data Exchange]
+        MQTT_BRIDGE[MQTT Bridge<br/>Protocol Translation]
+        TAG_SERVER[Tag Server<br/>Data Historian]
     end
     
     %% Central connections
     DT --> HS
     AI --> HS
     SCADA --> HS
+    MCP_SERVER --> HS
     
     %% Data fabric connections
     HS --> NFS
     HS --> MCP
     NFS --> MCP
+    
+    %% SCADA Integration connections
+    SCADA --> OPCUA
+    SCADA --> MQTT_BRIDGE
+    OPCUA --> TAG_SERVER
+    MQTT_BRIDGE --> TAG_SERVER
+    
+    %% Digital Twin connections
+    DT --> OPCUA
+    DT --> MQTT_BRIDGE
     
     %% Edge connections
     HS --> EDGE1
@@ -72,6 +97,14 @@ graph TB
     EDGE3 --> CRAWLER2
     EDGE3 --> CRAWLER3
     EDGE1 --> ROV1
+    EDGE2 --> SCARA1
+    EDGE3 --> SCARA2
+    
+    %% SCARA Robot connections
+    SCARA1 --> PLC
+    SCARA2 --> PLC
+    SCARA1 --> CONVEYORS
+    SCARA2 --> TOOLING
     
     %% Network connections
     DRONE1 --> NET1
@@ -80,11 +113,17 @@ graph TB
     CRAWLER1 --> NET2
     CRAWLER2 --> NET2
     CRAWLER3 --> NET2
-    ROV1 --> NET4
+    SCARA1 --> NET2
+    SCARA2 --> NET2
     
     %% Factory IoT connections
-    SENSORS --> NET2
-    CAMERAS --> NET2
+    SENSORS --> PLC
+    CAMERAS --> PLC
+    LIDAR --> PLC
+    CONVEYORS --> PLC
+    TOOLING --> PLC
+    PLC --> OPCUA
+    ROV1 --> NET4
     LIDAR --> NET2
     PLC --> NET3
     

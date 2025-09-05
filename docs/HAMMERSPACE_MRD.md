@@ -256,7 +256,7 @@ Isaac-Nexus differentiates through:
 - **Cost-Effective**: 40% lower TCO than traditional solutions
 
 #### 4.2.2 Competitive Advantages
-- **MCP Integration**: First-to-market peer-to-peer data sharing
+- **MCP Integration**: First-to-market agent-based tool calling and fleet control
 - **Hybrid RAG**: Advanced AI-driven data retrieval
 - **NVIDIA NIMS**: Optimized AI inference performance
 - **Policy Automation**: Intelligent data management policies
@@ -269,7 +269,7 @@ Isaac-Nexus differentiates through:
 - **For Engineers**: "Simplify complex data integration with AI-powered automation"
 
 #### 4.3.2 Positioning Statement
-"Issac-Nexus is the only data orchestration platform that combines MCP peer-to-peer sharing, hybrid RAG AI capabilities, and NVIDIA NIMS optimization to deliver intelligent data management for distributed robotics systems."
+"Issac-Nexus is the only data orchestration platform that combines MCP agent-based tool calling, hybrid RAG AI capabilities, and NVIDIA NIMS optimization to deliver intelligent data management for distributed robotics systems."
 
 ## 5. Go-to-Market Strategy
 

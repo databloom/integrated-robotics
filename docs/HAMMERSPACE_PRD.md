@@ -14,7 +14,7 @@ Transform Isaac-Nexus into a globally distributed, AI-powered robotics system th
 
 ### 1.2 Key Objectives
 - Enable seamless data movement between geodistributed robotic systems
-- Implement MCP (Multi-Cloud Protocol) for peer-to-peer data sharing
+- Implement MCP (Model Context Protocol) for agent-based tool calling and fleet control
 - Integrate hybrid RAG (Retrieval-Augmented Generation) for AI-driven data processing
 - Leverage NVIDIA NIMS (NVIDIA Inference Microservices) for optimized AI inference
 - Provide policy-based data orchestration for industrial robotics workflows
@@ -51,7 +51,7 @@ Transform Isaac-Nexus into a globally distributed, AI-powered robotics system th
 **Priority**: P0 (Critical)
 
 **Requirements**:
-- Implement MCP protocol for peer-to-peer data sharing between robotic systems
+- Implement MCP protocol for agent-based tool calling and fleet control between robotic systems
 - Support distributed consensus algorithms for data consistency
 - Enable secure data transmission with end-to-end encryption
 - Provide automatic peer discovery and network formation
@@ -397,7 +397,7 @@ sequenceDiagram
 ## 9. Appendices
 
 ### 9.1 Glossary
-- **MCP**: Multi-Cloud Protocol for peer-to-peer data sharing
+- **MCP**: Model Context Protocol for agent-based tool calling and fleet control
 - **RAG**: Retrieval-Augmented Generation for AI systems
 - **NIMS**: NVIDIA Inference Microservices
 - **Anvil**: Hammerspace metadata server

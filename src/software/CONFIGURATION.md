@@ -401,92 +401,404 @@ policies:
         level: 9
 ```
 
-## 6. MCP Implementation
+## 6. MCP (Model Context Protocol) Implementation
 
-### 6.1 MCP Node Setup
+### 6.1 MCP Server Setup
 
 ```bash
 # Install MCP dependencies
-pip install p2p-network cryptography asyncio-mqtt
+pip install mcp-server-sdk asyncio-mqtt cryptography websockets
 
-# Create MCP node configuration
-mkdir -p ~/mcp_node
-cd ~/mcp_node
+# Create MCP server configuration
+mkdir -p ~/mcp_server
+cd ~/mcp_server
 ```
 
-**MCP Node Configuration (`config/mcp_node_config.yaml`):**
+**MCP Server Configuration (`config/mcp_server_config.yaml`):**
 ```yaml
-mcp_node:
-  node_id: "node_001"
-  network:
-    bootstrap_nodes:
-      - "192.168.1.100:8000"
-      - "192.168.1.101:8000"
-    listen_port: 8000
-    max_peers: 50
+mcp_server:
+  server_id: "isaac_nexus_mcp_server"
+  version: "2024-11-05"
+  host: "0.0.0.0"
+  port: 8000
+  
+  # Agent Communication
+  agent_communication:
+    protocol: "websocket"
+    max_connections: 100
+    heartbeat_interval: 30
+    connection_timeout: 60
     
-  data_store:
-    path: "/mnt/mcp_data"
-    max_size: "100GB"
-    replication_factor: 3
+  # Tool Registry
+  tool_registry:
+    discovery_enabled: true
+    tool_timeout: 30
+    max_concurrent_tools: 50
+    tool_validation: true
     
-  consensus:
-    algorithm: "raft"
-    election_timeout: "150ms"
-    heartbeat_interval: "50ms"
+  # Context Management
+  context:
+    retention_period: "24h"
+    max_context_size: "1MB"
+    context_compression: true
+    shared_memory: true
     
+  # Security
   security:
-    encryption: "AES-256"
-    key_exchange: "ECDH"
-    authentication: "RSA-2048"
+    authentication: "oauth2_jwt"
+    authorization: "rbac"
+    encryption: "tls_1.3"
+    key_management: "hsm_based"
+    audit_logging: true
+    session_management: "stateless"
+    
+  # Fleet Control
+  fleet_control:
+    max_robots: 100
+    task_delegation: true
+    agent_coordination: true
+    real_time_monitoring: true
+    emergency_override: true
 ```
 
-### 6.2 MCP Client Implementation
+### 6.2 MCP Tool Calling System
+
+**MCP Tool Registry (`src/mcp/tool_registry.py`):**
+```python
+import asyncio
+import json
+from typing import Dict, List, Any, Optional
+from dataclasses import dataclass
+from datetime import datetime
+import logging
+
+@dataclass
+class ToolDefinition:
+    name: str
+    description: str
+    parameters: Dict[str, Any]
+    return_type: str
+    timeout: int
+    category: str
+    robot_types: List[str]
+    requires_auth: bool
+
+class MCPToolRegistry:
+    def __init__(self):
+        self.tools: Dict[str, ToolDefinition] = {}
+        self.tool_handlers: Dict[str, callable] = {}
+        self.logger = logging.getLogger(__name__)
+        
+    def register_tool(self, tool_def: ToolDefinition, handler: callable):
+        """Register a new tool with the MCP server"""
+        self.tools[tool_def.name] = tool_def
+        self.tool_handlers[tool_def.name] = handler
+        self.logger.info(f"Registered tool: {tool_def.name}")
+        
+    def discover_tools(self, robot_type: str = None, category: str = None) -> List[ToolDefinition]:
+        """Discover available tools for a robot type or category"""
+        filtered_tools = []
+        
+        for tool in self.tools.values():
+            if robot_type and robot_type not in tool.robot_types:
+                continue
+            if category and tool.category != category:
+                continue
+            filtered_tools.append(tool)
+            
+        return filtered_tools
+        
+    async def execute_tool(self, tool_name: str, parameters: Dict[str, Any], 
+                          context: Dict[str, Any] = None) -> Dict[str, Any]:
+        """Execute a tool with given parameters and context"""
+        if tool_name not in self.tools:
+            raise ValueError(f"Tool {tool_name} not found")
+            
+        tool_def = self.tools[tool_name]
+        handler = self.tool_handlers[tool_name]
+        
+        # Validate parameters
+        self._validate_parameters(tool_def, parameters)
+        
+        # Execute tool with timeout
+        try:
+            result = await asyncio.wait_for(
+                handler(parameters, context),
+                timeout=tool_def.timeout
+            )
+            
+            return {
+                "success": True,
+                "result": result,
+                "tool_name": tool_name,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+            
+        except asyncio.TimeoutError:
+            return {
+                "success": False,
+                "error": f"Tool {tool_name} timed out after {tool_def.timeout}s",
+                "tool_name": tool_name,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "tool_name": tool_name,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+            
+    def _validate_parameters(self, tool_def: ToolDefinition, parameters: Dict[str, Any]):
+        """Validate tool parameters against definition"""
+        required_params = tool_def.parameters.get("required", [])
+        
+        for param in required_params:
+            if param not in parameters:
+                raise ValueError(f"Required parameter {param} not provided")
+```
+
+### 6.3 Agent Fleet Control Tools
+
+**Fleet Control Tools (`src/mcp/fleet_tools.py`):**
+```python
+from mcp.tool_registry import MCPToolRegistry, ToolDefinition
+from typing import Dict, List, Any
+import asyncio
+
+class FleetControlTools:
+    def __init__(self, tool_registry: MCPToolRegistry):
+        self.tool_registry = tool_registry
+        self._register_fleet_tools()
+        
+    def _register_fleet_tools(self):
+        """Register all fleet control tools"""
+        
+        # Robot Status Tool
+        robot_status_tool = ToolDefinition(
+            name="get_robot_status",
+            description="Get current status of a robot in the fleet",
+            parameters={
+                "required": ["robot_id"],
+                "optional": ["include_telemetry", "include_errors"]
+            },
+            return_type="dict",
+            timeout=5,
+            category="fleet_control",
+            robot_types=["aerial_drone", "ground_crawler", "submarine_drone"],
+            requires_auth=True
+        )
+        self.tool_registry.register_tool(robot_status_tool, self._get_robot_status)
+        
+        # Robot Command Tool
+        robot_command_tool = ToolDefinition(
+            name="send_robot_command",
+            description="Send a command to a robot in the fleet",
+            parameters={
+                "required": ["robot_id", "command", "parameters"],
+                "optional": ["priority", "timeout"]
+            },
+            return_type="dict",
+            timeout=10,
+            category="fleet_control",
+            robot_types=["aerial_drone", "ground_crawler", "submarine_drone"],
+            requires_auth=True
+        )
+        self.tool_registry.register_tool(robot_command_tool, self._send_robot_command)
+        
+        # Fleet Coordination Tool
+        fleet_coordination_tool = ToolDefinition(
+            name="coordinate_fleet",
+            description="Coordinate multiple robots for a task",
+            parameters={
+                "required": ["task_id", "robot_ids", "task_parameters"],
+                "optional": ["coordination_strategy", "priority"]
+            },
+            return_type="dict",
+            timeout=30,
+            category="fleet_control",
+            robot_types=["aerial_drone", "ground_crawler", "submarine_drone"],
+            requires_auth=True
+        )
+        self.tool_registry.register_tool(fleet_coordination_tool, self._coordinate_fleet)
+        
+        # Emergency Stop Tool
+        emergency_stop_tool = ToolDefinition(
+            name="emergency_stop",
+            description="Emergency stop for robots or entire fleet",
+            parameters={
+                "required": ["scope"],
+                "optional": ["robot_ids", "reason"]
+            },
+            return_type="dict",
+            timeout=2,
+            category="emergency",
+            robot_types=["aerial_drone", "ground_crawler", "submarine_drone"],
+            requires_auth=True
+        )
+        self.tool_registry.register_tool(emergency_stop_tool, self._emergency_stop)
+        
+    async def _get_robot_status(self, parameters: Dict[str, Any], context: Dict[str, Any] = None) -> Dict[str, Any]:
+        """Get robot status implementation"""
+        robot_id = parameters["robot_id"]
+        include_telemetry = parameters.get("include_telemetry", False)
+        include_errors = parameters.get("include_errors", False)
+        
+        # Implementation would connect to robot via ROS 2 or MQTT
+        # This is a placeholder implementation
+        status = {
+            "robot_id": robot_id,
+            "status": "active",
+            "battery_level": 85.0,
+            "position": {"x": 10.5, "y": 20.3, "z": 5.2},
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+        if include_telemetry:
+            status["telemetry"] = {
+                "cpu_usage": 45.0,
+                "memory_usage": 60.0,
+                "temperature": 35.5,
+                "network_latency": 12.0
+            }
+            
+        if include_errors:
+            status["errors"] = []
+            
+        return status
+        
+    async def _send_robot_command(self, parameters: Dict[str, Any], context: Dict[str, Any] = None) -> Dict[str, Any]:
+        """Send robot command implementation"""
+        robot_id = parameters["robot_id"]
+        command = parameters["command"]
+        cmd_params = parameters["parameters"]
+        priority = parameters.get("priority", "normal")
+        timeout = parameters.get("timeout", 30)
+        
+        # Implementation would send command via ROS 2 or MQTT
+        # This is a placeholder implementation
+        result = {
+            "robot_id": robot_id,
+            "command": command,
+            "status": "sent",
+            "command_id": f"cmd_{datetime.utcnow().timestamp()}",
+            "priority": priority,
+            "timeout": timeout
+        }
+        
+        return result
+        
+    async def _coordinate_fleet(self, parameters: Dict[str, Any], context: Dict[str, Any] = None) -> Dict[str, Any]:
+        """Fleet coordination implementation"""
+        task_id = parameters["task_id"]
+        robot_ids = parameters["robot_ids"]
+        task_params = parameters["task_parameters"]
+        strategy = parameters.get("coordination_strategy", "sequential")
+        priority = parameters.get("priority", "normal")
+        
+        # Implementation would coordinate multiple robots
+        # This is a placeholder implementation
+        result = {
+            "task_id": task_id,
+            "robot_ids": robot_ids,
+            "coordination_strategy": strategy,
+            "status": "coordinated",
+            "estimated_duration": 300,  # seconds
+            "priority": priority
+        }
+        
+        return result
+        
+    async def _emergency_stop(self, parameters: Dict[str, Any], context: Dict[str, Any] = None) -> Dict[str, Any]:
+        """Emergency stop implementation"""
+        scope = parameters["scope"]  # "robot", "fleet", "all"
+        robot_ids = parameters.get("robot_ids", [])
+        reason = parameters.get("reason", "emergency_stop")
+        
+        # Implementation would send emergency stop commands
+        # This is a placeholder implementation
+        result = {
+            "scope": scope,
+            "robot_ids": robot_ids,
+            "reason": reason,
+            "status": "emergency_stop_sent",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+        return result
+```
+
+### 6.4 MCP Client Implementation
 
 ```python
 # mcp_client.py
 import asyncio
+import websockets
 import json
-from mcp_node import MCPNode
+from typing import Dict, List, Any, Optional
+from datetime import datetime
 
-class IsaacNexusMCPClient:
-    def __init__(self, config_path):
+class MCPClient:
+    def __init__(self, config_path: str):
         with open(config_path, 'r') as f:
             self.config = yaml.safe_load(f)
-        self.mcp_node = MCPNode(self.config['mcp_node'])
+        self.websocket = None
+        self.connected = False
         
-    async def start(self):
-        """Start MCP node"""
-        await self.mcp_node.start()
+    async def connect(self):
+        """Connect to MCP server"""
+        server_url = f"ws://{self.config['mcp_server']['host']}:{self.config['mcp_server']['port']}"
         
-    async def share_robot_data(self, robot_id, data, metadata):
-        """Share robot data with peers"""
-        data_id = f"robot_{robot_id}_{datetime.utcnow().timestamp()}"
-        
-        # Create data block
-        data_block = {
-            "id": data_id,
-            "robot_id": robot_id,
-            "data": data,
-            "metadata": metadata,
+        try:
+            self.websocket = await websockets.connect(server_url)
+            self.connected = True
+            print(f"Connected to MCP server at {server_url}")
+        except Exception as e:
+            print(f"Failed to connect to MCP server: {e}")
+            raise
+            
+    async def discover_tools(self, robot_type: str = None, category: str = None) -> List[Dict[str, Any]]:
+        """Discover available tools"""
+        if not self.connected:
+            await self.connect()
+            
+        discovery_request = {
+            "type": "tool_discovery",
+            "robot_type": robot_type,
+            "category": category,
             "timestamp": datetime.utcnow().isoformat()
         }
         
-        # Share with peers
-        await self.mcp_node.share_data(data_id, data_block, metadata)
+        await self.websocket.send(json.dumps(discovery_request))
+        response = await self.websocket.recv()
+        return json.loads(response)["tools"]
         
-    async def get_robot_data(self, robot_id, data_type=None):
-        """Get robot data from peers"""
-        # Query for robot data
-        query = {"robot_id": robot_id}
-        if data_type:
-            query["data_type"] = data_type
+    async def call_tool(self, tool_name: str, parameters: Dict[str, Any], 
+                       context: Dict[str, Any] = None) -> Dict[str, Any]:
+        """Call a tool on the MCP server"""
+        if not self.connected:
+            await self.connect()
             
-        results = await self.mcp_node.query_data(query)
-        return results
+        tool_call = {
+            "type": "tool_call",
+            "tool_name": tool_name,
+            "parameters": parameters,
+            "context": context or {},
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+        await self.websocket.send(json.dumps(tool_call))
+        response = await self.websocket.recv()
+        return json.loads(response)
+        
+    async def close(self):
+        """Close connection to MCP server"""
+        if self.websocket:
+            await self.websocket.close()
+            self.connected = False
 ```
 
-## 7. SCADA Integration
+## 7. SCADA Integration with Digital Twins
 
 ### 7.1 Ignition Edge Setup
 
@@ -503,42 +815,390 @@ sudo systemctl start ignition-edge
 sudo systemctl enable ignition-edge
 ```
 
-### 7.2 MQTT Bridge Configuration
+### 7.2 Digital Twin Integration
 
-**MQTT Bridge Configuration (`config/mqtt_bridge_config.yaml`):**
+**Digital Twin Configuration (`config/digital_twin_config.yaml`):**
 ```yaml
-mqtt_bridge:
-  mqtt:
-    broker: "192.168.1.100"
-    port: 1883
-    username: "isaac_nexus"
-    password: "password123"
-    
+digital_twin:
+  platform: "nvidia_omniverse"
+  omniverse_url: "http://localhost:8080"
+  
+  factory_models:
+    - name: "factory_a"
+      model_path: "/models/factory_a.usd"
+      scale: [1.0, 1.0, 1.0]
+      position: [0.0, 0.0, 0.0]
+      
+    - name: "factory_b"
+      model_path: "/models/factory_b.usd"
+      scale: [1.0, 1.0, 1.0]
+      position: [100.0, 0.0, 0.0]
+      
+  robot_models:
+    - name: "scara_arm_001"
+      model_path: "/models/scara_arm.usd"
+      robot_type: "scara"
+      workspace: "factory_a"
+      
+    - name: "drone_001"
+      model_path: "/models/drone.usd"
+      robot_type: "aerial_drone"
+      workspace: "factory_a"
+      
+  real_time_sync:
+    enabled: true
+    update_frequency: 30  # Hz
+    data_sources:
+      - "scada_tags"
+      - "robot_telemetry"
+      - "sensor_data"
+      
+  visualization:
+    camera_positions:
+      - name: "overview"
+        position: [50.0, 50.0, 100.0]
+        target: [0.0, 0.0, 0.0]
+      - name: "production_line"
+        position: [10.0, 5.0, 15.0]
+        target: [10.0, 0.0, 0.0]
+```
+
+### 7.3 SCADA System Integration
+
+**SCADA Configuration (`config/scada_config.yaml`):**
+```yaml
+scada_system:
+  platform: "ignition_edge"
+  version: "8.1.30"
+  
+  # Ignition Edge Configuration
   ignition:
     host: "localhost"
     port: 8088
     username: "admin"
     password: "admin123"
+    ssl_enabled: false
     
-  topics:
-    robot_telemetry: "/isaac_nexus/telemetry/+"
-    robot_commands: "/isaac_nexus/commands/+"
-    system_status: "/isaac_nexus/status/+"
+  # OPC UA Configuration
+  opcua:
+    server_endpoint: "opc.tcp://0.0.0.0:4840"
+    security_policy: "None"
+    security_mode: "None"
+    certificate_path: "/certs/opcua_cert.pem"
+    private_key_path: "/certs/opcua_key.pem"
     
-  mappings:
-    - mqtt_topic: "/isaac_nexus/telemetry/drone_001"
-      ignition_tag: "System/Robots/Drone001/Telemetry"
-    - mqtt_topic: "/isaac_nexus/commands/drone_001"
-      ignition_tag: "System/Robots/Drone001/Commands"
+  # MQTT Bridge Configuration
+  mqtt_bridge:
+    broker: "192.168.1.100"
+    port: 1883
+    username: "isaac_nexus"
+    password: "password123"
+    qos: 1
+    retain: true
+    
+  # Tag Configuration
+  tags:
+    robot_telemetry:
+      - name: "Robot001/Position"
+        data_type: "Float3"
+        description: "Robot position (x, y, z)"
+      - name: "Robot001/Battery"
+        data_type: "Float"
+        description: "Robot battery level"
+      - name: "Robot001/Status"
+        data_type: "String"
+        description: "Robot operational status"
+        
+    factory_sensors:
+      - name: "Factory/Temperature"
+        data_type: "Float"
+        description: "Factory ambient temperature"
+      - name: "Factory/Humidity"
+        data_type: "Float"
+        description: "Factory humidity level"
+      - name: "Factory/Pressure"
+        data_type: "Float"
+        description: "Factory atmospheric pressure"
+        
+    production_data:
+      - name: "Production/Line1/Status"
+        data_type: "String"
+        description: "Production line 1 status"
+      - name: "Production/Line1/Count"
+        data_type: "Int"
+        description: "Production line 1 item count"
+      - name: "Production/Line1/Speed"
+        data_type: "Float"
+        description: "Production line 1 speed"
 ```
 
-### 7.3 OPC UA Server Setup
+### 7.4 SCARA Robot Integration
+
+**SCARA Robot Configuration (`config/scara_robots.yaml`):**
+```yaml
+scara_robots:
+  - robot_id: "scara_001"
+    name: "Assembly Robot 1"
+    manufacturer: "FANUC"
+    model: "SCARA SR-3iA"
+    
+    # Mechanical Specifications
+    specifications:
+      payload: 3.0  # kg
+      reach: 400.0  # mm
+      repeatability: 0.02  # mm
+      max_speed: 1000.0  # mm/s
+      degrees_of_freedom: 4
+      
+    # Workspace Configuration
+    workspace:
+      x_min: -400.0
+      x_max: 400.0
+      y_min: -400.0
+      y_max: 400.0
+      z_min: 0.0
+      z_max: 200.0
+      
+    # Control Configuration
+    control:
+      controller: "FANUC R-30iB"
+      communication: "Ethernet/IP"
+      ip_address: "192.168.1.101"
+      port: 44818
+      
+    # Tool Configuration
+    tools:
+      - name: "gripper_001"
+        type: "pneumatic_gripper"
+        payload: 2.0
+        grip_force: 50.0  # N
+      - name: "welder_001"
+        type: "arc_welder"
+        power: 200.0  # W
+        voltage: 24.0  # V
+        
+    # Safety Configuration
+    safety:
+      emergency_stop: true
+      light_curtain: true
+      safety_rated_monitor_stop: true
+      safe_operating_space: true
+      
+  - robot_id: "scara_002"
+    name: "Pick and Place Robot"
+    manufacturer: "ABB"
+    model: "IRB 910SC"
+    
+    specifications:
+      payload: 6.0
+      reach: 500.0
+      repeatability: 0.01
+      max_speed: 1200.0
+      degrees_of_freedom: 4
+      
+    workspace:
+      x_min: -500.0
+      x_max: 500.0
+      y_min: -500.0
+      y_max: 500.0
+      z_min: 0.0
+      z_max: 250.0
+      
+    control:
+      controller: "ABB IRC5"
+      communication: "Modbus TCP"
+      ip_address: "192.168.1.102"
+      port: 502
+```
+
+### 7.5 Legacy PLC Integration
+
+**Legacy PLC Configuration (`config/legacy_plc.yaml`):**
+```yaml
+legacy_plc:
+  # Siemens S7-1200 Configuration
+  siemens_s7:
+    - plc_id: "plc_001"
+      name: "Main Production PLC"
+      model: "S7-1200"
+      ip_address: "192.168.1.201"
+      rack: 0
+      slot: 1
+      
+      # Communication Settings
+      communication:
+        protocol: "S7"
+        port: 102
+        timeout: 5000  # ms
+        retry_count: 3
+        
+      # Data Blocks
+      data_blocks:
+        - db_number: 1
+          name: "Production_Data"
+          size: 100
+        - db_number: 2
+          name: "Robot_Control"
+          size: 50
+        - db_number: 3
+          name: "Sensor_Data"
+          size: 200
+          
+      # Input/Output Mapping
+      io_mapping:
+        inputs:
+          - address: "I0.0"
+            name: "Emergency_Stop"
+            data_type: "BOOL"
+          - address: "I0.1"
+            name: "Start_Button"
+            data_type: "BOOL"
+          - address: "IW2"
+            name: "Temperature_Sensor"
+            data_type: "INT"
+            
+        outputs:
+          - address: "Q0.0"
+            name: "Conveyor_Motor"
+            data_type: "BOOL"
+          - address: "Q0.1"
+            name: "Warning_Light"
+            data_type: "BOOL"
+          - address: "QW2"
+            name: "Robot_Speed"
+            data_type: "INT"
+            
+  # Allen-Bradley PLC Configuration
+  allen_bradley:
+    - plc_id: "plc_002"
+      name: "Quality Control PLC"
+      model: "CompactLogix L32E"
+      ip_address: "192.168.1.202"
+      
+      communication:
+        protocol: "Ethernet/IP"
+        port: 44818
+        timeout: 5000
+        
+      tags:
+        - name: "Production_Count"
+          address: "Program:MainProgram.ProductionCount"
+          data_type: "DINT"
+        - name: "Quality_Status"
+          address: "Program:MainProgram.QualityStatus"
+          data_type: "BOOL"
+        - name: "Conveyor_Speed"
+          address: "Program:MainProgram.ConveyorSpeed"
+          data_type: "REAL"
+```
+
+### 7.6 SCADA-Digital Twin Bridge
+
+**SCADA-Digital Twin Bridge (`src/scada/digital_twin_bridge.py`):**
+```python
+import asyncio
+import json
+from typing import Dict, List, Any
+from datetime import datetime
+import logging
+
+class SCADADigitalTwinBridge:
+    def __init__(self, scada_config: Dict[str, Any], digital_twin_config: Dict[str, Any]):
+        self.scada_config = scada_config
+        self.digital_twin_config = digital_twin_config
+        self.logger = logging.getLogger(__name__)
+        
+        # Initialize connections
+        self.scada_client = None
+        self.digital_twin_client = None
+        self.running = False
+        
+    async def start(self):
+        """Start the SCADA-Digital Twin bridge"""
+        self.running = True
+        
+        # Initialize SCADA connection
+        await self._init_scada_connection()
+        
+        # Initialize Digital Twin connection
+        await self._init_digital_twin_connection()
+        
+        # Start data synchronization
+        await self._start_data_sync()
+        
+    async def _init_scada_connection(self):
+        """Initialize SCADA system connection"""
+        # Implementation for connecting to Ignition Edge
+        self.logger.info("Connecting to SCADA system...")
+        # Placeholder for actual SCADA connection
+        
+    async def _init_digital_twin_connection(self):
+        """Initialize Digital Twin connection"""
+        # Implementation for connecting to NVIDIA Omniverse
+        self.logger.info("Connecting to Digital Twin platform...")
+        # Placeholder for actual Digital Twin connection
+        
+    async def _start_data_sync(self):
+        """Start real-time data synchronization"""
+        while self.running:
+            try:
+                # Read data from SCADA
+                scada_data = await self._read_scada_data()
+                
+                # Update Digital Twin
+                await self._update_digital_twin(scada_data)
+                
+                # Read Digital Twin state
+                twin_data = await self._read_digital_twin_state()
+                
+                # Update SCADA if needed
+                await self._update_scada_from_twin(twin_data)
+                
+                await asyncio.sleep(1.0 / self.digital_twin_config['real_time_sync']['update_frequency'])
+                
+            except Exception as e:
+                self.logger.error(f"Error in data synchronization: {e}")
+                await asyncio.sleep(1.0)
+                
+    async def _read_scada_data(self) -> Dict[str, Any]:
+        """Read data from SCADA system"""
+        # Implementation for reading SCADA tags
+        return {
+            "timestamp": datetime.utcnow().isoformat(),
+            "robot_positions": {},
+            "factory_sensors": {},
+            "production_data": {}
+        }
+        
+    async def _update_digital_twin(self, data: Dict[str, Any]):
+        """Update Digital Twin with SCADA data"""
+        # Implementation for updating Digital Twin models
+        self.logger.debug(f"Updating Digital Twin with data: {data}")
+        
+    async def _read_digital_twin_state(self) -> Dict[str, Any]:
+        """Read current state from Digital Twin"""
+        # Implementation for reading Digital Twin state
+        return {
+            "timestamp": datetime.utcnow().isoformat(),
+            "simulation_state": "running",
+            "robot_states": {},
+            "factory_state": {}
+        }
+        
+    async def _update_scada_from_twin(self, data: Dict[str, Any]):
+        """Update SCADA system from Digital Twin state"""
+        # Implementation for updating SCADA from Digital Twin
+        self.logger.debug(f"Updating SCADA from Digital Twin: {data}")
+```
+
+### 7.7 OPC UA Server with Digital Twin Integration
 
 ```python
 # opcua_server.py
 import asyncio
 from opcua import Server, ua
 from opcua.common.node import Node
+from typing import Dict, List, Any
 
 class IsaacNexusOPCUAServer:
     def __init__(self, endpoint="opc.tcp://0.0.0.0:4840"):
@@ -549,15 +1209,51 @@ class IsaacNexusOPCUAServer:
         # Setup namespace
         self.namespace = self.server.register_namespace("IsaacNexus")
         
+        # Digital Twin integration
+        self.digital_twin_bridge = None
+        
     async def start(self):
         """Start OPC UA server"""
         await self.server.start()
         
+        # Create factory nodes
+        self.factory_nodes = {}
+        for factory in ["factory_a", "factory_b"]:
+            self.factory_nodes[factory] = await self._create_factory_node(factory)
+            
         # Create robot nodes
         self.robot_nodes = {}
-        for robot_id in ["drone_001", "crawler_001", "rov_001"]:
+        for robot_id in ["drone_001", "crawler_001", "rov_001", "scara_001", "scara_002"]:
             self.robot_nodes[robot_id] = await self._create_robot_node(robot_id)
             
+        # Create PLC nodes
+        self.plc_nodes = {}
+        for plc_id in ["plc_001", "plc_002"]:
+            self.plc_nodes[plc_id] = await self._create_plc_node(plc_id)
+            
+    async def _create_factory_node(self, factory_id):
+        """Create OPC UA node for factory"""
+        factory_node = self.server.nodes.objects.add_object(self.namespace, factory_id)
+        
+        # Add environmental sensors
+        sensors_node = factory_node.add_object(self.namespace, "Sensors")
+        sensors_node.add_variable(self.namespace, "Temperature", 20.0)
+        sensors_node.add_variable(self.namespace, "Humidity", 50.0)
+        sensors_node.add_variable(self.namespace, "Pressure", 1013.25)
+        
+        # Add production data
+        production_node = factory_node.add_object(self.namespace, "Production")
+        production_node.add_variable(self.namespace, "Line1_Status", "Running")
+        production_node.add_variable(self.namespace, "Line1_Count", 0)
+        production_node.add_variable(self.namespace, "Line1_Speed", 1.0)
+        
+        # Add digital twin status
+        digital_twin_node = factory_node.add_object(self.namespace, "DigitalTwin")
+        digital_twin_node.add_variable(self.namespace, "Sync_Status", "Active")
+        digital_twin_node.add_variable(self.namespace, "Last_Update", "")
+        
+        return factory_node
+        
     async def _create_robot_node(self, robot_id):
         """Create OPC UA node for robot"""
         robot_node = self.server.nodes.objects.add_object(self.namespace, robot_id)
@@ -567,14 +1263,41 @@ class IsaacNexusOPCUAServer:
         telemetry_node.add_variable(self.namespace, "Position", [0.0, 0.0, 0.0])
         telemetry_node.add_variable(self.namespace, "Battery", 100.0)
         telemetry_node.add_variable(self.namespace, "Status", "Idle")
+        telemetry_node.add_variable(self.namespace, "Temperature", 25.0)
         
         # Add command variables
         commands_node = robot_node.add_object(self.namespace, "Commands")
         commands_node.add_variable(self.namespace, "Takeoff", False)
         commands_node.add_variable(self.namespace, "Land", False)
         commands_node.add_variable(self.namespace, "EmergencyStop", False)
+        commands_node.add_variable(self.namespace, "MoveTo", [0.0, 0.0, 0.0])
+        
+        # Add SCARA-specific variables
+        if robot_id.startswith("scara"):
+            scara_node = robot_node.add_object(self.namespace, "SCARA")
+            scara_node.add_variable(self.namespace, "Joint_Angles", [0.0, 0.0, 0.0, 0.0])
+            scara_node.add_variable(self.namespace, "Tool_Position", [0.0, 0.0, 0.0])
+            scara_node.add_variable(self.namespace, "Gripper_Open", False)
+            scara_node.add_variable(self.namespace, "Gripper_Force", 0.0)
         
         return robot_node
+        
+    async def _create_plc_node(self, plc_id):
+        """Create OPC UA node for PLC"""
+        plc_node = self.server.nodes.objects.add_object(self.namespace, plc_id)
+        
+        # Add PLC status
+        status_node = plc_node.add_object(self.namespace, "Status")
+        status_node.add_variable(self.namespace, "Connected", False)
+        status_node.add_variable(self.namespace, "Last_Scan", 0)
+        status_node.add_variable(self.namespace, "Error_Count", 0)
+        
+        # Add I/O data
+        io_node = plc_node.add_object(self.namespace, "IO")
+        io_node.add_variable(self.namespace, "Inputs", {})
+        io_node.add_variable(self.namespace, "Outputs", {})
+        
+        return plc_node
         
     async def update_telemetry(self, robot_id, telemetry_data):
         """Update robot telemetry"""
@@ -593,6 +1316,12 @@ class IsaacNexusOPCUAServer:
             # Update status
             status_var = telemetry_node.get_child(f"{self.namespace}:Status")
             status_var.set_value(telemetry_data.get("status", "Unknown"))
+            
+            # Update SCARA-specific data
+            if robot_id.startswith("scara") and "joint_angles" in telemetry_data:
+                scara_node = robot_node.get_child(f"{self.namespace}:SCARA")
+                joint_angles_var = scara_node.get_child(f"{self.namespace}:Joint_Angles")
+                joint_angles_var.set_value(telemetry_data["joint_angles"])
 ```
 
 ## 8. Video Processing Setup

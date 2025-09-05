@@ -194,7 +194,7 @@ class NFS42ReplicationManager:
             concurrent.futures.wait(futures)
 ```
 
-## Appendix B: MCP (Multi-Cloud Protocol) Integration
+## Appendix B: MCP (Model Context Protocol) Integration
 
 ### B.1 Peer-to-Peer Data Sharing
 

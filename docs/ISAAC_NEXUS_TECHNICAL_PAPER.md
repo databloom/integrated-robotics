@@ -35,7 +35,7 @@ The Isaac-Nexus platform operates on four fundamental principles:
 
 3. **Advanced Data Fabric**
    - NFS 4.2 with tagging, streaming, and replication capabilities
-   - MCP (Multi-Cloud Protocol) for peer-to-peer data sharing
+   - MCP (Model Context Protocol) for agent-based tool calling and fleet control
    - Hammerspace orchestration for intelligent data movement
 
 4. **Modular Design**
@@ -141,11 +141,11 @@ The Isaac-Nexus platform operates on four fundamental principles:
 - Intelligent tiering (hot/warm/cold storage)
 - Global deduplication and compression
 
-**MCP (Multi-Cloud Protocol):**
-- Peer-to-peer data sharing
-- Distributed consensus algorithms
-- Secure data transmission
-- Cross-platform compatibility
+**MCP (Model Context Protocol):**
+- Agent-based tool calling and coordination
+- Real-time fleet control and management
+- Context-aware agent interactions
+- Tool discovery and execution framework
 
 #### 2.2.2 Communication Protocols
 
@@ -156,7 +156,7 @@ The Isaac-Nexus platform operates on four fundamental principles:
 | Video | RTSP/H.265 | HD video streaming | 2-20 Mbps | <200ms |
 | Telemetry | MQTT | Sensor data | 0.1-1 Mbps | <1s |
 | File Transfer | NFS 4.2 | Large data transfer | 100 Mbps-1 Gbps | Variable |
-| P2P | MCP | Distributed sharing | Variable | <500ms |
+| Agent Control | MCP | Tool calling & coordination | Variable | <100ms |
 
 ## 3. Technical Implementation
 
@@ -426,7 +426,7 @@ The platform's modular design, scalable architecture, and advanced AI capabiliti
 
 [4] Internet Engineering Task Force. (2024). "NFS Version 4.2 Protocol Specification". RFC 7862.
 
-[5] Multi-Cloud Protocol Consortium. (2024). "MCP: Peer-to-Peer Data Sharing Protocol". Technical Specification v2.1.
+[5] Model Context Protocol Consortium. (2024). "MCP: Agent-Based Tool Calling Protocol". Technical Specification v2024-11-05.
 
 [6] International Society of Automation. (2024). "SCADA Systems in Industry 4.0". ISA Technical Report.
 

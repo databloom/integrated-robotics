@@ -181,7 +181,7 @@ hammerspace:
           target: "central_archive"
           priority: "low"
 
-# MCP (Multi-Cloud Protocol) configuration
+# MCP (Model Context Protocol) configuration
 mcp:
   enabled: true
   node_id: "node_001"

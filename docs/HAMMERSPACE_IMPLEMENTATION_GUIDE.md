@@ -9,7 +9,7 @@
 
 ## 1. Overview
 
-This guide provides detailed technical implementation instructions for integrating Hammerspace data orchestration with MCP (Multi-Cloud Protocol), hybrid RAG (Retrieval-Augmented Generation), and NVIDIA NIMS (NVIDIA Inference Microservices) for the Isaac-Nexus robotics platform.
+This guide provides detailed technical implementation instructions for integrating Hammerspace data orchestration with MCP (Model Context Protocol), hybrid RAG (Retrieval-Augmented Generation), and NVIDIA NIMS (NVIDIA Inference Microservices) for the Isaac-Nexus robotics platform.
 
 ## 2. MCP Integration Architecture
 
